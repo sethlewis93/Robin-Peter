@@ -1,0 +1,17 @@
+{
+  "name": "robin-peter",
+  "version": "1.0.0",
+  "description": "A YNAB-to-YNAB extension that automatically moves money from a spend category to a tax fund",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "body-parser": "^1.20.2",
+    "ejs": "^3.1.8",
+    "express": "^4.18.2"
+  }
+}
