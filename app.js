@@ -11,45 +11,64 @@ require("dotenv").config();
 const ynabAPIKey = `${process.env.YNAB_TOKEN}`;
 const budgetID = `${process.env.DEVELOPER_BUDGET_ID}`;
 
-// LISTEN FOR NEW TRANSACTION
-/**
- * When a transaction is CLEARED:
- * * that should register an event that acts as the trigger for the workflow below.
- */
-
-// Get the transaction ID
-let transactionID = "b073095e-5dc8-40bf-9bfc-9d36925cec51";
-
 var myHeaders = new Headers();
 myHeaders.append("Authorization", `Bearer ${ynabAPIKey}`);
 
+// TODO: Call this function every 2 minutes
 async function getTransactionData() {
-  const transactionData = await fetch(
-    `https://api.youneedabudget.com/v1/budgets/${budgetID}/transactions/${transactionID}`,
+  const currentMonthTransactions = await fetch(
+    `https://api.youneedabudget.com/v1/budgets/${budgetID}/transactions?since_date=2023-03-01`,
     {
       headers: myHeaders,
     }
-  ).then((res) => res.json());
-
-  let transactionJSON = transactionData.data.transaction;
+  )
+    .then((res) => res.json())
+    .then((result) => result.data.transactions);
 
   function isClearedTransaction(transaction) {
     return transaction.cleared === "cleared";
   }
 
   // If the transaction is cleared but has been automated, return true
-  function hasBeenAutomated(transaction) {
-    return transaction.flag_color === "Automated";
+  function hasBeenAutomated(transactions) {
+    return transactions.flag_color === "Automated";
   }
 
-  if (
-    isClearedTransaction(transactionJSON) &&
-    !hasBeenAutomated(transactionJSON)
-  ) {
-    console.log("Transaction eligible");
-  } else {
-    console.log("Transaction not eligible");
+  function getCategory(transactions) {
+    return isClearedTransaction(transactions) && !hasBeenAutomated(transactions)
+      ? transactions.category_name
+      : null;
   }
+
+  // TODO: Perform the calculation on non-food transaction
+  function calculateSixPercentSalesFigure(transactions) {
+    let sixPercentSalesTaxFigure = [];
+    for (let transaction of transactions) {
+      if (getCategory(transaction) !== "Groceries") {
+        let transactionAmount = Math.abs(transaction.amount);
+        function convertAmountToDollars(amount) {
+          return Number((Number(amount) / 1000).toFixed(2));
+        }
+        transactionAmount = convertAmountToDollars(transactionAmount);
+        sixPercentSalesTaxFigure.push(
+          Number((transactionAmount * 0.06).toFixed(2))
+        );
+      }
+    }
+    return sixPercentSalesTaxFigure;
+  }
+
+  console.log(calculateSixPercentSalesFigure(currentMonthTransactions));
+
+  // TODO: Check the category's transfer eligibility
+
+  /**
+   * Write a function that checks the funds in each transactions non-Grocery category and compares them with the figures in `sixPercentSalesTax..`
+   * If the category funds are >= `sixPercentSales...` move the corresponding dollar amount to the 'Uncle Sam' category.
+   * Otherwise, don't do anything.
+   */
+
+  // TODO: Move the six percent figure to the Uncle Sam Category
 }
 
 getTransactionData();
