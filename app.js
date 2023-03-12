@@ -12,7 +12,10 @@ const ynabAPIKey = `${process.env.YNAB_TOKEN}`;
 const budgetID = `${process.env.DEVELOPER_BUDGET_ID}`;
 
 // LISTEN FOR NEW TRANSACTION
-/** Code here */
+/**
+ * When a transaction is CLEARED:
+ * * that should register an event that acts as the trigger for the workflow below.
+ */
 
 // Get the transaction ID
 let transactionID = "b073095e-5dc8-40bf-9bfc-9d36925cec51";
@@ -34,8 +37,19 @@ async function getTransactionData() {
     return transaction.cleared === "cleared";
   }
 
-  if (isClearedTransaction(transactionJSON)) console.log("Transaction cleared");
-  else console.log("Transaction not cleared");
+  // If the transaction is cleared but has been automated, return true
+  function hasBeenAutomated(transaction) {
+    return transaction.flag_color === "Automated";
+  }
+
+  if (
+    isClearedTransaction(transactionJSON) &&
+    !hasBeenAutomated(transactionJSON)
+  ) {
+    console.log("Transaction eligible");
+  } else {
+    console.log("Transaction not eligible");
+  }
 }
 
 getTransactionData();
